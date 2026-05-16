@@ -1,0 +1,17 @@
+Loading documents...
+Splitting documents into chunks...
+Filtered out empty chunks. Going from 4 to 4 valid chunks.
+Creating vector embeddings and saving to local database...
+Traceback (most recent call last):
+  File "/workspaces/learn_ai/my_project/rag_app.py", line 36, in <module>
+    vector_store = Chroma.from_documents(
+                   ^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspaces/learn_ai/my_project/.venv/lib/python3.12/site-packages/langchain_chroma/vectorstores.py", line 1431, in from_documents
+    return cls.from_texts(
+           ^^^^^^^^^^^^^^^
+  File "/workspaces/learn_ai/my_project/.venv/lib/python3.12/site-packages/langchain_chroma/vectorstores.py", line 1365, in from_texts
+    chroma_collection.add_texts(
+  File "/workspaces/learn_ai/my_project/.venv/lib/python3.12/site-packages/langchain_chroma/vectorstores.py", line 645, in add_texts
+    [embeddings[idx] for idx in non_empty_ids]
+     ~~~~~~~~~~^^^^^
+IndexError: list index out of range
