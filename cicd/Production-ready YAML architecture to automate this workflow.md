@@ -1,11 +1,14 @@
-Here is the complete, production-ready YAML architecture to automate this workflow.
-This setup captures the webhook payload from Bitbucket Data Center when a Pull Request is opened or updated, runs a Trivy vulnerability scan, and reports the SUCCESS or FAILED build status back to Bitbucket to enforce the merge gate.
+# Complete, production-ready YAML architecture to automate this workflow.
+- This setup captures the webhook payload from Bitbucket Data Center when a Pull Request is opened or updated, runs a Trivy vulnerability scan, and reports the SUCCESS or FAILED build status back to Bitbucket to enforce the merge gate.
 ------------------------------
 ## 1. The Trigger Binding
 This component extracts the precise commit hash, project/repository keys, and pull request information from the unique Bitbucket Data Center JSON payload structure [1].
-
-apiVersion: triggers.tekton.dev/v1alpha1kind: TriggerBindingmetadata:
-  name: bitbucket-dc-pr-bindingspec:
+```
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerBinding
+metadata:
+  name: bitbucket-dc-pr-binding
+spec:
   params:
     # Extracts the latest commit ID from the source branch of the PR
     - name: git-commit
@@ -21,13 +24,16 @@ apiVersion: triggers.tekton.dev/v1alpha1kind: TriggerBindingmetadata:
       value: $(body.pullRequest.toRef.repository.project.key)
     - name: bitbucket-repo
       value: $(body.pullRequest.toRef.repository.slug)
-
+```
 ------------------------------
 ## 2. The Trigger Template
 This template acts as the blueprint. It takes the parameters extracted by the binding above and instantiates your CI Pipeline Run [1].
-
-apiVersion: triggers.tekton.dev/v1alpha1kind: TriggerTemplatemetadata:
-  name: bitbucket-dc-pr-templatespec:
+```
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerTemplate
+metadata:
+  name: bitbucket-dc-pr-template
+spec:
   params:
     - name: git-commit
     - name: git-revision
@@ -62,13 +68,16 @@ apiVersion: triggers.tekton.dev/v1alpha1kind: TriggerTemplatemetadata:
                 resources:
                   requests:
                     storage: 1Gi
-
+```
 ------------------------------
 ## 3. The DevSecOps Pipeline
 This pipeline clones the code, scans it for vulnerabilities, and uses a finally block to guarantee Bitbucket is updated even if the vulnerability scan crashes or fails.
-
-apiVersion: tekton.dev/v1beta1kind: Pipelinemetadata:
-  name: security-gate-pipelinespec:
+```
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: security-gate-pipeline
+spec:
   params:
     - name: repo-url
     - name: revision
@@ -125,13 +134,16 @@ apiVersion: tekton.dev/v1beta1kind: Pipelinemetadata:
           value: "Vulnerability Scan Gate"
         - name: DESCRIPTION
           value: "Checking branch code for CVEs and hardcoded secrets."
-
+```
 ------------------------------
 ## 4. The Event Listener
 This service exposes the HTTP endpoint that you paste into Bitbucket's Webhook configuration interface.
-
-apiVersion: triggers.tekton.dev/v1alpha1kind: EventListenermetadata:
-  name: bitbucket-dc-listenerspec:
+```
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: EventListener
+metadata:
+  name: bitbucket-dc-listener
+spec:
   serviceAccountName: tekton-triggers-sa
   triggers:
     - name: pr-events
@@ -148,12 +160,5 @@ apiVersion: triggers.tekton.dev/v1alpha1kind: EventListenermetadata:
         - ref: bitbucket-dc-pr-binding
       template:
         ref: bitbucket-dc-pr-template
-
-## Next Steps to Make This Work
-
-   1. Ensure the git-clone, trivy-scanner, and bitbucket-server-set-build-status Tasks are installed in your cluster from the Tekton Hub.
-   2. Create a Kubernetes Secret containing a Bitbucket Personal Access Token (PAT) so Tekton has API permissions to write the build status back to https://yourcompany.com.
-   3. In Bitbucket, configure your Webhook URL to point to the external IP/route of your bitbucket-dc-listener service.
-
-Do you need help configuring the Kubernetes Secret or the Service Account permissions required for Tekton to talk to Bitbucket securely?
+```
 
