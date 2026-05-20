@@ -1,0 +1,70 @@
+To enforce gating checks like vulnerability scanning before merging or during a build, you must combine Tekton Tasks for the security scans, Tekton Triggers to intercept the code, and Bitbucket Data Center Settings to block unapproved merges.
+Here is exactly how to set this up using a standard DevSecOps workflow.
+------------------------------
+## Step 1: Prevent Merges in Bitbucket (The Gate)
+You must configure Bitbucket Data Center to physically block developers from merging code to the main branch until your Tekton vulnerability scans pass.
+
+   1. Go to your repository in Bitbucket.
+   2. Navigate to Repository settings > Branch permissions.
+   3. Add a permission rule targeting your main branch.
+   4. Check the box for Require build status to pass (or require successful branch builds).
+   5. Set the minimum number of successful builds to 1.
+
+Result: The "Merge" button in Bitbucket remains greyed out and locked until Tekton reports back that the security scan passed.
+------------------------------
+## Step 2: Use Tekton to Run the Security Scans
+In your Kubernetes cluster, add a dedicated security scanning Task to your Tekton pipeline. Popular open-source scanners like Trivy, SonarQube, or Gitleaks work natively with Tekton.
+For example, you can integrate a Trivy Tekton Task immediately after your code-checkout task:
+
+# A simplified view of your Tekton Pipeline structureapiVersion: tekton.dev/v1beta1kind: Pipelinemetadata:
+  name: security-gate-pipelinespec:
+  tasks:
+    - name: clone-repository
+      taskRef:
+        name: git-clone
+    - name: vulnerability-scan
+      runAfter: [clone-repository]
+      taskRef:
+        name: trivy-scanner # Scans the cloned directory for CVEs
+      params:
+        - name: ARGS
+          value: ["fs", "--exit-code", "1", "."] # Exit code 1 fails the build if flaws are found
+
+Note: Setting --exit-code 1 causes the Tekton Task to fail if it finds vulnerabilities, which automatically fails the overall build status.
+------------------------------
+## Step 3: Send the Pass/Fail Status Back to Bitbucket
+Tekton runs independently in Kubernetes, so it must actively tell Bitbucket whether the scan passed or failed. Use the Bitbucket Server Set Build Status Task from the Tekton Hub.
+Add this as a finally task in your Tekton Pipeline so it runs regardless of whether the scan passes or fails:
+
+  finally:
+    - name: notify-bitbucket
+      taskRef:
+        name: bitbucket-server-set-build-status
+      params:
+        - name: BITBUCKET_SERVER_URL
+          value: "https://yourcompany.com"
+        - name: REPO_SLUG
+          value: $(params.repo-slug)
+        - name: COMMIT_ID
+          value: $(params.commit-id)
+        - name: STATE
+          value: $(tasks.vulnerability-scan.status) # Sends "SUCCESSFUL" or "FAILED"
+
+------------------------------
+## Step 4: Automate with Webhook Triggers
+To catch vulnerabilities before code hits main, configure your Tekton EventListener to trigger this pipeline on two specific Bitbucket webhook events:
+
+* Pull Request Opened: Automatically runs the security scan the moment a developer proposes changes.
+* Pull Request Source Branch Updated: Re-runs the scan every time the developer pushes new commits to their open pull request.
+
+------------------------------
+## Summary of the Workflow
+
+   1. Developer pushes code to a feature branch and opens a Pull Request.
+   2. Bitbucket fires a webhook to Tekton.
+   3. Tekton clones the branch, runs the vulnerability scan, and fails if flaws are found.
+   4. Tekton posts the FAILED or SUCCESSFUL status back to Bitbucket's build API.
+   5. Bitbucket evaluates its branch permissions and unlocks the Merge button only if the status is SUCCESSFUL.
+
+Would you like a full YAML example showing how to pass the commit ID and repository details from the Bitbucket webhook payload directly into this pipeline status notifier?
+
