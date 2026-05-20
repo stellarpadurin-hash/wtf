@@ -3,18 +3,18 @@ This process evaluates the vulnerabilities discovered, checks package metadata, 
 ------------------------------
 ## Step-by-Step Architecture for Auto-Remediation
 The logic split in your pipeline happens immediately after your vulnerability scanner (like Trivy or Checkmarx) exports its vulnerability list:
-
+```
 [ Scan Results JSON ] 
          │
          ▼
 [ Remediation Script ] ─── (Non-Breaking Fix?) ───> YES ───> Upgrades package in-place & continues build
          │
          └───> NO (Breaking Change Required) ─────> YES ───> Aborts build & uses git to open a Remediation PR
-
+```
 ------------------------------
 ## Step 1: The Automation Task (In-Place Upgrade vs. PR Creation)
 Here is a specialized custom Tekton Task that implements this dual-path automation logic for a standard Node.js/NPM project (the same concept applies to Python pip, Java maven, or Go modules).
-
+```
 apiVersion: tekton.dev/v1beta1kind: Taskmetadata:
   name: auto-remediate-vulnerabilitiesspec:
   workspaces:
@@ -92,11 +92,11 @@ apiVersion: tekton.dev/v1beta1kind: Taskmetadata:
           echo "Aborting current build task. Breaking changes must be merged via the newly created PR."
           exit 1
         fi
-
+```
 ------------------------------
 ## Step 2: Injecting the Task into Your Master Pipeline
 Place the remediation task directly after checking out the code, but before your application build or docker compile steps run:
-
+```
   tasks:
     - name: clone-code
       taskRef:
@@ -124,7 +124,7 @@ Place the remediation task directly after checking out the code, but before your
       runAfter: [auto-fix-packages]
       taskRef:
         name: build-application-binary
-
+```
 ------------------------------
 ## Critical Engineering Considerations
 
