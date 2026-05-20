@@ -63,5 +63,5 @@ To make the architecture clear, here is what each specific component does during
    * trivy-scanner: Inspects dependencies, configurations, and code for critical security flaws. If it catches a flaw, it intentionally crashes itself with exit code 1.
    * bitbucket-server-set-build-status: The messenger. No matter if the scanner passes or crashes, this final step takes the verdict and sends it back to Bitbucket's REST API.
 
-Would you like to drill down into the Kubernetes role-based access control (RBAC) needed to let these Tekton actors communicate securely?
+
 
