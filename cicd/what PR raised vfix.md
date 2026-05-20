@@ -1,5 +1,7 @@
-When a Pull Request (PR) is raised for a breaking security fix, the Tekton bot intentionally halts the current build path to prevent unsafe code from moving forward, while simultaneously creating a isolated sandbox environment for review.
-Here is exactly how the system reacts, step-by-step, to handle a breaking version upgrade safely without risking production stability.
+# Post Actions for PR raised for breaking security fix
+
+- When a Pull Request (PR) is raised for a breaking security fix, the Tekton bot intentionally halts the current build path to prevent unsafe code from moving forward, while simultaneously creating a isolated sandbox environment for review.
+- Here is exactly how the system reacts, step-by-step, to handle a breaking version upgrade safely without risking production stability.
 ------------------------------
 ## 1. The Original Feature Branch Pipeline is Blocked
 When the remediation script realizes a fix requires a major version upgrade (e.g., upgrading framework v2.x to v3.x), it executes two critical safety steps:
@@ -29,7 +31,7 @@ To prevent your automation from getting stuck in an infinite loop, your Tekton E
 ------------------------------
 ## 4. The Human Review Workflow Takes Over
 At this stage, automation stops, and human engineering takes over. Because it is a breaking change, a developer must manually intervene to fix broken code patterns.
-
+```
 [ Security-Fix PR Opened ] 
             │
             ▼
@@ -49,7 +51,7 @@ At this stage, automation stops, and human engineering takes over. Because it is
             │
             ▼
 [ Tekton Re-Scans & Pass Status Sent ] ───> [ PR Unlocked & Merged Manually ]
-
+```
 
    1. The Developer Reviews the Bot PR: The developer inspects the automated PR in Bitbucket to see exactly which framework version was forced.
    2. Local Code Correction: The developer pulls down the bot's branch (security-fix/framework-to-3.0.0) onto their local machine. They fix any syntax changes, deprecated methods, or broken integration configurations caused by the major version leap.
@@ -58,12 +60,11 @@ At this stage, automation stops, and human engineering takes over. Because it is
    5. The Safe Merge: The team safely clicks Merge on the breaking-fix PR, updating the foundation of the repository.
 
 ## Summary of State
+```
 
 | Action Item | Non-Breaking Fix | Breaking Fix |
 |---|---|---|
 | Pipeline Action | Patch applied in-place during build. | Build aborted; new branch pushed. |
 | Bitbucket Status | Marks PR as PASSED [1]. | Marks original PR as FAILED [1]. |
 | Human Effort | Zero. Merges automatically. | Required. Must refactor code changes. |
-
-Would you like to see how to structure a Maven/Java or Python variant of this check, or should we look at creating the Cel filter configuration to manage these bot branches?
 
