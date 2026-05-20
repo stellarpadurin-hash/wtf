@@ -1,5 +1,6 @@
 Here is the visual diagrammatic view of the entire DevSecOps gating flow, mapping the interactions between the Developer, Bitbucket Data Center, and Tekton in your Kubernetes cluster.
 ## Architectural Sequence Flow
+```
 
 [ Developer ]        [ Bitbucket Data Center ]              [ Kubernetes Cluster (Tekton) ]
      │                           │                                         │
@@ -48,6 +49,7 @@ Here is the visual diagrammatic view of the entire DevSecOps gating flow, mappin
      <───────────────────────────│
 
 ------------------------------
+```
 ## Actor & Component Responsibilities
 To make the architecture clear, here is what each specific component does during the process:
 
