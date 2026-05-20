@@ -1,7 +1,10 @@
-The script provided previously only targets explicit jar dependencies declared in your application's <dependencies> or <dependencyManagement> blocks. It will not fix vulnerabilities originating from an outdated Parent POM version (such as an old spring-boot-starter-parent) or third-party Bill of Materials (BOM). [1] 
-To build a truly enterprise-grade remediation pipeline, you must handle both scenarios.
+# Fix Vulnerabilities originating from an outdated Parent POM version 
+
+- The script provided previously only targets explicit jar dependencies declared in your application's <dependencies> or <dependencyManagement> blocks. It will not fix vulnerabilities originating from an outdated Parent POM version (such as an old spring-boot-starter-parent) or third-party Bill of Materials (BOM). [1] 
+- To build a truly enterprise-grade remediation pipeline, you must handle both scenarios.
 ------------------------------
-## The Two Pillars of Maven Remediation## 1. Individual JAR Dependencies
+## The Two Pillars of Maven Remediation
+## 1. Individual JAR Dependencies
 
 * How it's inherited: Declared natively within the project.
 * The Automation Fix: mvn versions:set-dependency-version safely overrides the coordinates in-place.
@@ -14,7 +17,7 @@ To build a truly enterprise-grade remediation pipeline, you must handle both sce
 ------------------------------
 ## Upgraded Tekton Automation Script (Handles Both)
 Here is how you structure the automation logic inside your Tekton Task's execution block so that it actively determines whether to patch an isolated JAR dependency or the macro-level Parent Framework version.
-
+```
 #!/bin/sh
 apk add --no-cache git curl jq
 
@@ -52,14 +55,15 @@ IS_PARENT_VULNERABLE=$(jq -r --arg pkg "$FLAWED_JAR" '.Results[0].Vulnerabilitie
     -DnewVersion="$FIXED_VERSION"
     
   exit 0fi
-
+```
 ------------------------------
 ## Pro-Tip: The Dependency Management Override Trick
-Sometimes, a project uses a Parent POM that you do not own (e.g., a corporate shared template or an older Spring Boot parent) and you are not allowed to change the parent version. [3, 5] 
-To override a vulnerability buried inside a parent without changing the parent tag itself, you must inject the fixed version directly into your local child project's <dependencyManagement> section. According to Maven's "Nearest Definition" rule, declarations inside the local project's <dependencyManagement> completely override whatever version the parent is trying to enforce. [6, 7, 8, 9] 
-You can automate this injection in the pipeline using a lightweight XML CLI utility like xmlstarlet directly inside your container step:
+- Sometimes, a project uses a Parent POM that you do not own (e.g., a corporate shared template or an older Spring Boot parent) and you are not allowed to change the parent version. [3, 5] 
+- To override a vulnerability buried inside a parent without changing the parent tag itself, you must inject the fixed version directly into your local child project's <dependencyManagement> section. According to Maven's "Nearest Definition" rule, declarations inside the local project's <dependencyManagement> completely override whatever version the parent is trying to enforce. [6, 7, 8, 9] 
+- You can automate this injection in the pipeline using a lightweight XML CLI utility like xmlstarlet directly inside your container step:
 
 # Force inject a safe dependency version to override the stubborn parent block
+```
 xmlstarlet ed -L \
   -N x="http://apache.org" \
   -s "//x:dependencyManagement/x:dependencies" -t elem -n dependency \
@@ -67,16 +71,5 @@ xmlstarlet ed -L \
   -s "//x:dependencyManagement/x:dependencies/x:dependency[last()]" -t elem -n artifactId -v "snakeyaml" \
   -s "//x:dependencyManagement/x:dependencies/x:dependency[last()]" -t elem -n version -v "2.0" \
   pom.xml
+```
 
-Would you like to review how to write a verification build script step within this pipeline to test if your project compiles safely after changing either the parent version or an isolated JAR? [10] 
-
-[1] [https://stackoverflow.com](https://stackoverflow.com/questions/78978022/trivy-vulnerabilities-does-not-match-our-pom-dependencies-in-our-maven-project)
-[2] [https://stackoverflow.com](https://stackoverflow.com/questions/1636801/can-maven-projects-have-multiple-parents)
-[3] [https://wewake.dev](https://wewake.dev/posts/resolving-maven-dependency-vulnerabilities-practical-guide/)
-[4] [https://blog.devgenius.io](https://blog.devgenius.io/find-and-fix-transitive-dependency-version-upgrade-conflicts-in-maven-7ffb4ceae683)
-[5] [https://dgempiuc.medium.com](https://dgempiuc.medium.com/maven-multi-module-dependency-conflicts-540769c146a)
-[6] [https://github.com](https://github.com/aquasecurity/trivy/issues/7493)
-[7] [https://maven.apache.org](https://maven.apache.org/pom/maven/)
-[8] [https://maven.apache.org](https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html)
-[9] [https://stackoverflow.com](https://stackoverflow.com/questions/3937195/maven-how-to-override-the-dependency-added-by-a-library)
-[10] [https://www.sonatype.com](https://www.sonatype.com/resources/guides/maven-by-example/simple-maven-project)
