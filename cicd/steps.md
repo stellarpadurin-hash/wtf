@@ -17,6 +17,8 @@ In your Kubernetes cluster, add a dedicated security scanning Task to your Tekto
 For example, you can integrate a Trivy Tekton Task immediately after your code-checkout task:
 
 # A simplified view of your Tekton Pipeline structureapiVersion: tekton.dev/v1beta1kind: Pipelinemetadata:
+
+```
   name: security-gate-pipelinespec:
   tasks:
     - name: clone-repository
@@ -29,13 +31,14 @@ For example, you can integrate a Trivy Tekton Task immediately after your code-c
       params:
         - name: ARGS
           value: ["fs", "--exit-code", "1", "."] # Exit code 1 fails the build if flaws are found
+```
 
 Note: Setting --exit-code 1 causes the Tekton Task to fail if it finds vulnerabilities, which automatically fails the overall build status.
 ------------------------------
 ## Step 3: Send the Pass/Fail Status Back to Bitbucket
 Tekton runs independently in Kubernetes, so it must actively tell Bitbucket whether the scan passed or failed. Use the Bitbucket Server Set Build Status Task from the Tekton Hub.
 Add this as a finally task in your Tekton Pipeline so it runs regardless of whether the scan passes or fails:
-
+```
   finally:
     - name: notify-bitbucket
       taskRef:
@@ -49,7 +52,7 @@ Add this as a finally task in your Tekton Pipeline so it runs regardless of whet
           value: $(params.commit-id)
         - name: STATE
           value: $(tasks.vulnerability-scan.status) # Sends "SUCCESSFUL" or "FAILED"
-
+```
 ------------------------------
 ## Step 4: Automate with Webhook Triggers
 To catch vulnerabilities before code hits main, configure your Tekton EventListener to trigger this pipeline on two specific Bitbucket webhook events:
@@ -66,5 +69,4 @@ To catch vulnerabilities before code hits main, configure your Tekton EventListe
    4. Tekton posts the FAILED or SUCCESSFUL status back to Bitbucket's build API.
    5. Bitbucket evaluates its branch permissions and unlocks the Merge button only if the status is SUCCESSFUL.
 
-Would you like a full YAML example showing how to pass the commit ID and repository details from the Bitbucket webhook payload directly into this pipeline status notifier?
 
