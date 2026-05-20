@@ -5,7 +5,7 @@
 ## Step 1: Add the Versions Plugin to your pom.xml
 
 To allow the Tekton bot to safely query and modify dependency versions without breaking your build, ensure the versions-maven-plugin is declared in your project's pom.xml:
-
+```
 <build>
     <plugins>
         <plugin>
@@ -15,15 +15,17 @@ To allow the Tekton bot to safely query and modify dependency versions without b
         </plugin>
     </plugins>
 </build>
-
+```
 ------------------------------
 ## Step 2: The Maven Auto-Remediation Tekton Task
 This custom Tekton Task executes a two-phase process:
 
    1. Safe/Non-Breaking Upgrades: It uses versions:use-next-releases restricting updates to incremental patches (e.g., bugfixes/minor updates within SemVer). If that resolves the issue, it commits the changes and continues the build.
    2. Breaking Upgrades: If a critical flaw remains that requires a Major upgrade (e.g., migrating from Spring Boot 2.x to 3.x), it creates an isolated branch, forces the upgrade via versions:set-dependency-version, and submits a Bitbucket Pull Request.
-
-apiVersion: tekton.dev/v1beta1kind: Taskmetadata:
+```
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
   name: maven-auto-remediatespec:
   workspaces:
     - name: source-dir
@@ -127,7 +129,7 @@ apiVersion: tekton.dev/v1beta1kind: Taskmetadata:
         # Explicitly crash this task execution path to block the unsafe codebase build
         echo "🛑 Pipeline halted. Human review required for breaking changes on PR."
         exit 1
-
+```
 ------------------------------
 ## Step 3: Best Practice Rules for Maven Automation
 When writing Java automation code, keep these rules in mind to avoid corrupted builds:
