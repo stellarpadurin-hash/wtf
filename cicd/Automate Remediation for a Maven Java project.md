@@ -1,7 +1,9 @@
-To automate remediation for a Maven/Java project, you cannot use npm-style commands. Instead, you must use the native mvn versions-maven-plugin alongside a vulnerability scanner (like Trivy or OWASP Dependency-Check) that can export flaws in a machine-readable JSON format.
-Here is how to structure the pipeline logic, the custom Tekton Task, and the specialized Maven configuration.
+# Automate remediation for a Maven/Java project
+- To automate remediation for a Maven/Java project, you cannot use npm-style commands. Instead, you must use the native mvn versions-maven-plugin alongside a vulnerability scanner (like Trivy or OWASP Dependency-Check) that can export flaws in a machine-readable JSON format.
+- Here is how to structure the pipeline logic, the custom Tekton Task, and the specialized Maven configuration.
 ------------------------------
 ## Step 1: Add the Versions Plugin to your pom.xml
+
 To allow the Tekton bot to safely query and modify dependency versions without breaking your build, ensure the versions-maven-plugin is declared in your project's pom.xml:
 
 <build>
@@ -134,5 +136,4 @@ When writing Java automation code, keep these rules in mind to avoid corrupted b
    2. Utilize Maven Properties: If your versions are managed via properties blocks (e.g., <spring.version>2.7.1</spring.version>), use the specialized mvn versions:update-property -Dproperty=spring.version -DnewVersion=3.0.0 goal instead of set-dependency-version. This keeps your project configuration organized.
    3. Run a Verification Compilation: After patching a "non-breaking" change, consider adding an immediate mvn clean test-compile step within the same task. If the compile fails due to hidden API changes, catch the error, roll back, and force it down Path B (The Breaking PR path) instead.
 
-Would you like to explore how to extend this Maven task to verify if your code compiles cleanly before deciding if a fix is truly non-breaking?
 
