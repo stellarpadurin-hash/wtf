@@ -1,9 +1,12 @@
-To ensure that an automated upgrade—whether it's a minor JAR update or a complex Parent POM shift—doesn't break the application, you must inject a Verification Compilation Step right after the modification runs, but before you make the final decision to commit or open a Pull Request.
-If the project compiles and its unit tests pass, the upgrade is classified as Non-Breaking and the pipeline proceeds. If compilation or testing fails, the code changes are rolled back, and the pipeline falls back to Path B (The Breaking PR path) so a human can fix the breaking changes.
+# inject a Verification Compilation Step
+
+- To ensure that an automated upgrade—wheher it's a minor JAR update or a complex Parent POM shift—doesn't break the application, you must inject a Verification Compilation Step right after the modification runs, but before you make the final decision to commit or open a Pull Request.
+- If the project compiles and its unit tests pass, the upgrade is classified as Non-Breaking and the pipeline proceeds. If compilation or testing fails, the code changes are rolled back, and the pipeline falls back to Path B (The Breaking PR path) so a human can fix the breaking changes.
 ------------------------------
 ## The Verification Framework Logic
 Here is how the automated validation flow behaves inside the container:
 
+```
 [ Apply Auto-Upgrade ]
           │
           ▼
@@ -12,11 +15,12 @@ Here is how the automated validation flow behaves inside the container:
           ├──> SUCCESSFUL? ──> Run Unit Tests ──> PASSED? ──> [ Merge / Continue Build ]
           │                                         │
           └──> NO ──────────────────────────────────┴───────> [ Rollback & Open Breaking PR ]
-
+```
 ------------------------------
 ## Upgraded Tekton Task with Automated Verification
 This full, end-to-end shell execution script integrates directly into your Tekton Task's execution block. It tracks the outcome of mvn clean test to determine if the upgrade is safe.
 
+```
 #!/bin/sh# Fail the shell script if unexpected errors happen, but handle maven outcomes manuallyset -e
 apk add --no-cache git curl jq
 
@@ -89,7 +93,7 @@ else
 
   # Explicitly fail the task to block the current flawed master build from advancing
   exit 1fi
-
+```
 ------------------------------
 ## Production Tuning Checklist
 To optimize this compilation step inside an enterprise environment, ensure you apply these configurations:
@@ -98,5 +102,5 @@ To optimize this compilation step inside an enterprise environment, ensure you a
 * Isolate Test Databases: If your unit or integration tests require a live database connection (e.g., PostgreSQL/MySQL), use a Tekton Sidecar Container to spin up an ephemeral database container alongside your Maven validation execution step.
 * Skip Heavy Integration Tests (Optional): If your full integration test suite takes over an hour, you might want to only run surface compilation checks. You can adjust the verification command to mvn clean test-compile to only catch syntax/API breakage while skipping heavy test execution blocks.
 
-Would you like help setting up the Tekton Sidecar configuration or the .m2 caching volume for this task to maximize performance?
+
 
