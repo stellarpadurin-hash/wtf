@@ -7,9 +7,9 @@
     [ Tekton Pipeline Step: Maven Auto-Remediation ]
                           │
                           ▼
-             ┌─────────────────────────┐
-             │ Run Trivy File Scan     │
-             └─────────────────────────┘
+             ┌────────────────────────────┐
+             │ Run Vulnerability File Scan│
+             └────────────────────────────┘
                           │
                           ▼
                / Vulnerabilities \
