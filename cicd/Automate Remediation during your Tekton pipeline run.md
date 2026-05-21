@@ -1,8 +1,10 @@
-To automate remediation during your Tekton pipeline run, you need to add an Auto-Remediation Script Step directly into your pipeline workflow before compiling or packaging your application.
-This process evaluates the vulnerabilities discovered, checks package metadata, and acts dynamically depending on whether a fix is non-breaking or breaking.
+# Automate remediation during Tekton pipeline run
+- To automate remediation during Tekton pipeline run, we need to add an Auto-Remediation Script Step directly into your pipeline workflow before compiling or packaging your application.
+- This process evaluates the vulnerabilities discovered, checks package metadata, and acts dynamically depending on whether a fix is non-breaking or breaking.
 ------------------------------
 ## Step-by-Step Architecture for Auto-Remediation
 The logic split in your pipeline happens immediately after your vulnerability scanner (like Trivy or Checkmarx) exports its vulnerability list:
+```
 
 [ Scan Results JSON ] 
          │
@@ -10,13 +12,16 @@ The logic split in your pipeline happens immediately after your vulnerability sc
 [ Remediation Script ] ─── (Non-Breaking Fix?) ───> YES ───> Upgrades package in-place & continues build
          │
          └───> NO (Breaking Change Required) ─────> YES ───> Aborts build & uses git to open a Remediation PR
-
+```
 ------------------------------
 ## Step 1: The Automation Task (In-Place Upgrade vs. PR Creation)
-Here is a specialized custom Tekton Task that implements this dual-path automation logic for a standard Node.js/NPM project (the same concept applies to Python pip, Java maven, or Go modules).
-
-apiVersion: tekton.dev/v1beta1kind: Taskmetadata:
-  name: auto-remediate-vulnerabilitiesspec:
+A specialized custom Tekton Task that implements this dual-path automation logic for a standard Node.js/NPM project (the same concept applies to Python pip, Java maven, or Go modules).
+```
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: auto-remediate-vulnerabilities
+  spec:
   workspaces:
     - name: source-dir
   params:
@@ -92,11 +97,12 @@ apiVersion: tekton.dev/v1beta1kind: Taskmetadata:
           echo "Aborting current build task. Breaking changes must be merged via the newly created PR."
           exit 1
         fi
-
+```
 ------------------------------
 ## Step 2: Injecting the Task into Your Master Pipeline
-Place the remediation task directly after checking out the code, but before your application build or docker compile steps run:
 
+Place the remediation task directly after checking out the code, but before your application build or docker compile steps run:
+```
   tasks:
     - name: clone-code
       taskRef:
@@ -124,12 +130,11 @@ Place the remediation task directly after checking out the code, but before your
       runAfter: [auto-fix-packages]
       taskRef:
         name: build-application-binary
-
+```
 ------------------------------
 ## Critical Engineering Considerations
 
-* SaaS Package Managers: Native tools handles the semver logic out-of-the-box. For example, npm audit fix natively rejects major version changes unless you pass the --force flag. This allows you to split non-breaking from breaking modifications automatically. For Java, use the mvn versions:use-latest-releases plugin with strict version constraints.
-* The PR Loop Safety: Ensure your Tekton Trigger excludes branches matching security-fix/* from firing a new webhook pipeline loop. If you do not add this exclusion rule to your EventListener, the automated PR created by Tekton will trigger another pipeline run, causing an infinite loop.
+* SaaS Package Managers: Native tools handles the semver logic out-of-the-box. For example, *npm audit fix* natively rejects major version changes unless we pass the --force flag. This allows us to split non-breaking from breaking modifications automatically. For Java, use the *mvn versions:use-latest-releases plugin* with strict version constraints.
+* The PR Loop Safety: Ensure the Tekton Trigger excludes branches matching security-fix/* from firing a new webhook pipeline loop. If we do not add this exclusion rule to the EventListener, the automated PR created by Tekton will trigger another pipeline run, causing an infinite loop.
 
-Would you like to see how to modify your Tekton EventListener Interceptor filters to ignore these specific security fix branches?
 
