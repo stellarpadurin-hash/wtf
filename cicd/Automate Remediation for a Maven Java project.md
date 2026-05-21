@@ -4,7 +4,7 @@
 ------------------------------
 ## Step 1: Add the Versions Plugin to your pom.xml
 
-To allow the Tekton bot to safely query and modify dependency versions without breaking your build, ensure the versions-maven-plugin is declared in your project's pom.xml:
+To allow the Tekton bot to safely query and modify dependency versions without breaking your build, ensure the **versions-maven-plugin** is declared in your project's pom.xml:
 ```
 <build>
     <plugins>
@@ -20,13 +20,14 @@ To allow the Tekton bot to safely query and modify dependency versions without b
 ## Step 2: The Maven Auto-Remediation Tekton Task
 This custom Tekton Task executes a two-phase process:
 
-   1. Safe/Non-Breaking Upgrades: It uses versions:use-next-releases restricting updates to incremental patches (e.g., bugfixes/minor updates within SemVer). If that resolves the issue, it commits the changes and continues the build.
-   2. Breaking Upgrades: If a critical flaw remains that requires a Major upgrade (e.g., migrating from Spring Boot 2.x to 3.x), it creates an isolated branch, forces the upgrade via versions:set-dependency-version, and submits a Bitbucket Pull Request.
+   1. **Safe/Non-Breaking Upgrades**: It uses versions:use-next-releases restricting updates to incremental patches (e.g., bugfixes/minor updates within SemVer). If that resolves the issue, it commits the changes and continues the build.
+   2. **Breaking Upgrades**: If a critical flaw remains that requires a Major upgrade (e.g., migrating from Spring Boot 2.x to 3.x), it creates an isolated branch, forces the upgrade via versions:set-dependency-version, and submits a Bitbucket Pull Request.
 ```
 apiVersion: tekton.dev/v1beta1
 kind: Task
 metadata:
-  name: maven-auto-remediatespec:
+  name: maven-auto-remediate
+spec:
   workspaces:
     - name: source-dir
   params:
@@ -134,8 +135,8 @@ metadata:
 ## Step 3: Best Practice Rules for Maven Automation
 When writing Java automation code, keep these rules in mind to avoid corrupted builds:
 
-   1. Manage Parent POMs Carefully: If your dependencies are controlled inside a parent multi-module architecture, run the Maven execution command from the root folder containing your parent pom.xml. The plugin will automatically cascade version updates down to sub-modules.
-   2. Utilize Maven Properties: If your versions are managed via properties blocks (e.g., <spring.version>2.7.1</spring.version>), use the specialized mvn versions:update-property -Dproperty=spring.version -DnewVersion=3.0.0 goal instead of set-dependency-version. This keeps your project configuration organized.
-   3. Run a Verification Compilation: After patching a "non-breaking" change, consider adding an immediate mvn clean test-compile step within the same task. If the compile fails due to hidden API changes, catch the error, roll back, and force it down Path B (The Breaking PR path) instead.
+   1. **Manage Parent POMs Carefully**: If the dependencies are controlled inside a parent multi-module architecture, run the Maven execution command from the root folder containing your parent pom.xml. The plugin will automatically cascade version updates down to sub-modules.
+   2. **Utilize Maven Properties**: If the versions are managed via properties blocks (e.g., <spring.version>2.7.1</spring.version>), use the specialized mvn versions:update-property -Dproperty=spring.version -DnewVersion=3.0.0 goal instead of set-dependency-version. This keeps the project configuration organized.
+   3. **Run a Verification Compilation**: After patching a "non-breaking" change, consider adding an immediate mvn clean test-compile step within the same task. If the compile fails due to hidden API changes, catch the error, roll back, and force it down Path B (The Breaking PR path) instead.
 
 
