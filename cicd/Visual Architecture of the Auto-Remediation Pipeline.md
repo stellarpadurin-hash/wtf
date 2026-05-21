@@ -76,11 +76,11 @@
 ------------------------------
 ## Understanding the Visual Decision Points
 
-   1. *The Scanner Branching*: The script doesn't just read vulnerability names; it evaluates the metadata. If a vulnerability is widespread because your corporate template or framework parent (like spring-boot-starter-parent) is from three years ago, it uses specialized Maven parent tools rather than generic dependency overrides.
-   2. *The "Sandboxed" Upgrade Execution*: When the upgrade is made, the workspace is temporarily mutated. It is critical that this modification stays in a detached state until the validation process gives it a green light.
-   3. *The Sandbox Verdict*:
-   * Success Path: If mvn clean test exits safely with code 0, Tekton treats the upgrade as an invisible, self-healing background action. The developer's feature branch builds seamlessly using the fresh, secure code.
-   * Failure Path: If a method signature was deprecated or deleted in the new version, your unit tests or compiler will instantly throw an error. The bot cleanly undoes all local file edits (git reset --hard) so it doesn't pollute the user's workspace, clones a separate safety branch, pushes the breaking upgrade there, and leaves an explicit warning trail on Bitbucket for the engineers to refactor manually.
+   1. **The Scanner Branching**: The script doesn't just read vulnerability names; it evaluates the metadata. If a vulnerability is widespread because your corporate template or framework parent (like spring-boot-starter-parent) is from three years ago, it uses specialized Maven parent tools rather than generic dependency overrides.
+   2. **The "Sandboxed" Upgrade Execution**: When the upgrade is made, the workspace is temporarily mutated. It is critical that this modification stays in a detached state until the validation process gives it a green light.
+   3. **The Sandbox Verdict**:
+   * **Success Path**: If mvn clean test exits safely with code 0, Tekton treats the upgrade as an invisible, self-healing background action. The developer's feature branch builds seamlessly using the fresh, secure code.
+   * **Failure Path**: If a method signature was deprecated or deleted in the new version, the unit tests or compiler will instantly throw an error. The bot cleanly undoes all local file edits (git reset --hard) so it doesn't pollute the user's workspace, clones a separate safety branch, pushes the breaking upgrade there, and leaves an explicit warning trail on Bitbucket for the engineers to refactor manually.
    
 
 
