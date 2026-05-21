@@ -1,5 +1,6 @@
-The distinction between a breaking and non-breaking change is determined programmatically by the exit status of your verification compiler (Maven) combined with Semantic Versioning (SemVer) analysis.
-Because static analysis tools cannot predict with 100% certainty if an API method signature was deleted or altered inside a new JAR, your Tekton pipeline must use a Try-Catch-Rollback execution pattern to classify the change.
+# Breaking vs Non-Breaking Changes
+- The distinction between a breaking and non-breaking change is determined programmatically by the exit status of the verification compiler (Maven) combined with Semantic Versioning (SemVer) analysis.
+- Because static analysis tools cannot predict with 100% certainty if an API method signature was deleted or altered inside a new JAR, the Tekton pipeline must use a Try-Catch-Rollback execution pattern to classify the change.
 ------------------------------
 ## The Classification Matrix
 
@@ -13,15 +14,20 @@ Because static analysis tools cannot predict with 100% certainty if an API metho
 ------------------------------
 ## Step 1: Programmatic Identification Logic
 To identify which category a vulnerability fix falls into, your automation task script executes the following classification sequence:
-
+```
 # 1. Apply the upgrade using the Versions plugin
+
 mvn versions:use-dep-version -Ddependency="$FLAWED_JAR" -DdepVersion="$FIXED_VERSION" -DforceVersion=true
+
 # 2. RUN THE SAFTEY NET CHECK# We temporarily disable strict bash exit-on-error (+e) to safely capture Maven's crash statusset +e
+
 mvn clean test-compile
 COMPILE_EXIT_CODE=$?
 
 mvn test -DfailIfNoTests=false
-TEST_EXIT_CODE=$?set -e
+TEST_EXIT_CODE=$?
+set -e
+
 # 3. EVALUATION MATRIXif [ $COMPILE_EXIT_CODE -eq 0 ] && [ $TEST_EXIT_CODE -eq 0 ]; then
     # -----------------------------------------------------------------
     # IDENTIFIED AS: NON-BREAKING CHANGE
@@ -45,23 +51,24 @@ TEST_EXIT_CODE=$?set -e
     git reset --hard HEAD
     
     # Proceed to isolate this change on a branch and notify the developer via Bitbucket PR
-    exit 1fi
-
+    exit 1
+fi
+```
 ------------------------------
 ## Why "Successful Compilation" is Not Enough (The Test Suite Rule)
-A dependency update can pass compilation but still be a breaking change at runtime. Your verification phase must run unit and integration tests for complete validation.
+A dependency update can pass compilation but still be a breaking change at runtime. The verification phase must run unit and integration tests for complete validation.
 
-* Example of Compile Pass / Runtime Break: Upgrading a database driver (e.g., Hibernate or a JDBC driver). The Java code will compile without errors because the interface classes look exactly the same. However, when the app boots up, a SQL query syntax change inside the new driver could trigger a runtime crash.
-* The Pipeline Defense: By linking both test-compile and test execution outcomes together, your pipeline catches hidden behavioral regressions and correctly flags them as breaking changes.
+* **Example of Compile Pass / Runtime Break**: Upgrading a database driver (e.g., Hibernate or a JDBC driver). The Java code will compile without errors because the interface classes look exactly the same. However, when the app boots up, a SQL query syntax change inside the new driver could trigger a runtime crash.
+* **The Pipeline Defense**: By linking both test-compile and test execution outcomes together, the pipeline catches hidden behavioral regressions and correctly flags them as breaking changes.
 
 ------------------------------
 ## Advanced Tooling: Java API Compliance Checker
-If you want to catch breaking API changes before compiling your code, you can integrate an open-source tool called revapi or the Java API Compliance Checker into your pipeline workflow.
-These tools compare the binary structure of the old JAR against the new JAR. They generate a report detailing exact backward-compatibility breaks, such as:
+- If we want to catch breaking API changes before compiling your code, we can integrate an open-source tool called revapi or the Java API Compliance Checker into your pipeline workflow.
+- These tools compare the binary structure of the old JAR against the new JAR. They generate a report detailing exact backward-compatibility breaks, such as:
 
-* Method removed: A method used by your app no longer exists.
-* Interface template changed: A class implementing an updated interface now lacks required methods.
+* **Method removed**: A method used by your app no longer exists.
+* **Interface template changed**: A class implementing an updated interface now lacks required methods.
 
-If Revapi flags a BREAKING binary compatibility issue, your script can instantly classify the dependency upgrade as a breaking change and bypass the compilation loop entirely to save pipeline processing time.
-Would you like to see how to embed the Revapi Maven Plugin configuration into your pom.xml to automate this structural binary check?
+If Revapi flags a BREAKING binary compatibility issue, the script can instantly classify the dependency upgrade as a breaking change and bypass the compilation loop entirely to save pipeline processing time.
+
 
