@@ -1,6 +1,6 @@
 # DevSecOps Gating Flow - Visual Architecture
 
-Here is the visual diagrammatic view of the entire DevSecOps gating flow, mapping the interactions between the Developer, Bitbucket Data Center, and Tekton in your Kubernetes cluster.
+Visual diagrammatic view of the entire DevSecOps gating flow, mapping the interactions between the **Developer, Bitbucket Data Center, and Tekton in the Kubernetes cluster**.
 
 ## Architectural Sequence Flow
 
