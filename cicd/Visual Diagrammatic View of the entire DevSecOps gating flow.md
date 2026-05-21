@@ -43,7 +43,7 @@ Here is the visual diagrammatic view of the entire DevSecOps gating flow, mappin
        │                           │                         ┌───────────▼──────────────┐
        │                           │                         │ 6. Execute Tasks:        │
        │                           │                         │    a) git-clone          │
-       │                           │                         │    b) trivy-scanner      │
+       │                           │                         │    b) security-scanner   │
        │                           │                         │    c) Report results     │
        │                           │                         └───────────┬──────────────┘
        │                           │                                     │
@@ -115,7 +115,7 @@ The front-door of your CI/CD cluster:
 | 4 | Tekton | Parse & validate | Extract commit ID, repo details |
 | 5 | Tekton | Create PipelineRun | Security scan pipeline starts |
 | 6a | Tekton | git-clone task | Source code downloaded |
-| 6b | Tekton | trivy-scanner task | Vulnerability scan executed |
+| 6b | Tekton | security-scanner task | Vulnerability scan executed |
 | 6c | Tekton | Report task | Results sent to Bitbucket API |
 | 7 | Tekton | POST build status | Send PASS/FAIL to Bitbucket |
 | 8 | Bitbucket | Evaluate status | Unlock merge (PASS) or keep blocked (FAIL) |
