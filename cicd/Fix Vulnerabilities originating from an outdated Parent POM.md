@@ -1,22 +1,22 @@
 # Fix Vulnerabilities originating from an outdated Parent POM version 
 
-- The script provided previously only targets explicit jar dependencies declared in your application's <dependencies> or <dependencyManagement> blocks. It will not fix vulnerabilities originating from an outdated Parent POM version (such as an old spring-boot-starter-parent) or third-party Bill of Materials (BOM). [1] 
-- To build a truly enterprise-grade remediation pipeline, you must handle both scenarios.
+- We need to fix vulnerabilities originating from an outdated Parent POM version (such as an old spring-boot-starter-parent) or third-party Bill of Materials (BOM). 
+- We need to build a truly enterprise-grade remediation pipeline, by handling the scenario.
 ------------------------------
 ## The Two Pillars of Maven Remediation
 ## 1. Individual JAR Dependencies
 
 * How it's inherited: Declared natively within the project.
-* The Automation Fix: mvn versions:set-dependency-version safely overrides the coordinates in-place.
+* The Automation Fix:**mvn versions:set-dependency-version** safely overrides the coordinates in-place.
 
 ## 2. The Parent POM / Spring Boot BOM Frameworks
 
 * How it's inherited: Controlled at the top of the file via the <parent> block. A single outdated parent brings down hundreds of transitive dependencies.
-* The Automation Fix: mvn versions:update-parent handles this. You cannot use the regular dependency commands to upgrade a parent block. [2, 3, 4] 
+* The Automation Fix: **mvn versions:update-parent** handles this. We cannot use the regular dependency commands to upgrade a parent block. [2, 3, 4] 
 
 ------------------------------
 ## Upgraded Tekton Automation Script (Handles Both)
-Here is how you structure the automation logic inside your Tekton Task's execution block so that it actively determines whether to patch an isolated JAR dependency or the macro-level Parent Framework version.
+Here is how you structure the automation logic inside the Tekton Task's execution block so that it actively determines whether to patch an isolated JAR dependency or the macro-level Parent Framework version.
 ```
 #!/bin/sh
 apk add --no-cache git curl jq
@@ -58,9 +58,9 @@ IS_PARENT_VULNERABLE=$(jq -r --arg pkg "$FLAWED_JAR" '.Results[0].Vulnerabilitie
 ```
 ------------------------------
 ## Pro-Tip: The Dependency Management Override Trick
-- Sometimes, a project uses a Parent POM that you do not own (e.g., a corporate shared template or an older Spring Boot parent) and you are not allowed to change the parent version. [3, 5] 
-- To override a vulnerability buried inside a parent without changing the parent tag itself, you must inject the fixed version directly into your local child project's <dependencyManagement> section. According to Maven's "Nearest Definition" rule, declarations inside the local project's <dependencyManagement> completely override whatever version the parent is trying to enforce. [6, 7, 8, 9] 
-- You can automate this injection in the pipeline using a lightweight XML CLI utility like xmlstarlet directly inside your container step:
+- Sometimes, a project uses a Parent POM that you do not own (e.g., a corporate shared template or an older Spring Boot parent) we are not allowed to change the parent version.
+- To override a vulnerability buried inside a parent without changing the parent tag itself, you must inject the fixed version directly into your local child project's <dependencyManagement> section. According to Maven's "Nearest Definition" rule, declarations inside the local project's <dependencyManagement> completely override whatever version the parent is trying to enforce. 
+- We can automate this injection in the pipeline using a lightweight XML CLI utility like xmlstarlet directly inside your container step:
 
 # Force inject a safe dependency version to override the stubborn parent block
 ```
