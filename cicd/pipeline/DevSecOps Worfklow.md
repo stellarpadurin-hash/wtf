@@ -68,21 +68,21 @@ and pipeline finishes.                 directly to 'main'                  │
                                                  └────────────────────────────────┘
                                                                    │
                                                                    ▼
-                                                 ┌────────────────────────────────┐
-                                                 │ git push & open Bitbucket Bot  │
-                                                 │ PR (Fails original active build)│
-                                                 └────────────────────────────────┘
+                                                 ┌──────────────────────────────────┐
+                                                 │ git push & open Bitbucket Bot    │
+                                                 │ PR (Fails original active build) │
+                                                 └──────────────────────────────────┘
                                                                    │
                                                                    ▼
-                                                 ┌────────────────────────────────┐
+                                                 ┌──────────────────────────────────┐
                                                  │ CEL Interceptor Filter intercepts│
-                                                 │ Bot PR webhook -> Pauses loop  │
-                                                 └────────────────────────────────┘
+                                                 │ Bot PR webhook -> Pauses loop    │
+                                                 └──────────────────────────────────┘
                                                                    │
                                                                    ▼
                                                  ┌────────────────────────────────┐
                                                  │ Developer pulls Bot branch     │
-                                                 │ refactors code, pushes fixes  │
+                                                 │ refactors code, pushes fixes   │
                                                  └────────────────────────────────┘
                                                                    │
                                                                    ▼
