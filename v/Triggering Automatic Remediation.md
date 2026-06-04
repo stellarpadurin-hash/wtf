@@ -1,9 +1,10 @@
 With Bitbucket Data Center and Tekton, finding the right cadence for running dependency updates is all about balancing **security posture** against **infrastructure cost and developer friction**.
-If you trigger automated dependency upgrades on every single feature branch build, you will overwhelm your Tekton clusters and frustrate developers with a non-stop flood of automated Pull Requests.
+If we trigger automated dependency upgrades on every single feature branch build, we will overwhelm your Tekton clusters and frustrate developers with a non-stop flood of automated Pull Requests.
 The industry best practice for running a tool like Renovate or Snyk in this specific ecosystem is a hybrid model: run dependency updates as a **Scheduled Cron Job**, but run validation checks during the **PR workflow**.
-Here is how you should structure the triggers across your pipeline.
+
+Here is how we should structure the triggers across your pipeline.
 ## 1. Automated Remediation (Opening PRs): Run as a Scheduled Job
-You should trigger the dependency update tool (e.g., Renovate CLI running inside a Tekton Task) via a **scheduled Tekton PipelineRun (Cron)**—for example, every Sunday night or daily at midnight.
+We should trigger the dependency update tool (e.g., Renovate CLI running inside a Tekton Task) via a **scheduled Tekton PipelineRun (Cron)**—for example, every Sunday night or daily at midnight.
 ### Why a Scheduled Job?
  * **Reduces Noise:** If a popular Node.js or Python package updates three times in one week, a daily or weekly schedule ensures your developers only see *one* consolidated PR rather than three separate notifications interrupting their active sprint work.
  * **Controlled Batching:** Running it off-hours ensures that your Tekton workers aren't bogged down running dependency resolution algorithms during peak development hours.
